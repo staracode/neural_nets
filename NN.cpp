@@ -278,8 +278,10 @@ class NN
 			if( line.length() == (unsigned)0 ) continue;
 			assert( line.length() == (unsigned)line_length );
 
-			for ( int i = 0; i < input_symbols; i++ )
+			for ( int i = 0; i < input_symbols; i++ ){
 				isymbmap[ line[ i ] ];
+				std::cout << line[ i ]  << line[ i ] << std::endl;
+			}
 #if   defined NN_8x3x8
 			for ( int i = input_symbols; i < line_length; i++ )
 				osymbmap[ line[ i ] ];
@@ -385,8 +387,6 @@ class NN
 
 		posLines->clear();
 		negLines->clear();
-		delete posLines;
-		delete negLines;
 	}
 
 	//-----------------------------------------------------
@@ -592,9 +592,6 @@ public:
 			{
 				std::cout << "line length error for test vector = " << line << " (test = " << tests << ")\n";
 				logFile << "line length error for test vector = " << line << " (test = " << tests << ")\n";
-				delete[] test_inputs;
-				delete[] test_outputs;
-				return;
 			}
 
 			assert(line.length() == static_cast<unsigned>(line_length));
@@ -608,9 +605,6 @@ public:
 				{
 					cout	<< "input symbol error for test vector = " << line << " (test = " << tests << ")\n";
 					logFile << "input symbol error for test vector = " << line << " (test = " << tests << ")\n";
-					delete[] test_inputs;
-					delete[] test_outputs;
-					return;
 				}
 				else
 				{
@@ -624,9 +618,6 @@ public:
 					{
 						cout	<< "output symbol error for test vector = " << line << " (test = " << tests << ")\n";
 						logFile << "output symbol error for test vector = " << line << " (test = " << tests << ")\n";
-						delete[] test_inputs;
-						delete[] test_outputs;
-						return;
 					}
 					else
 					{
@@ -686,8 +677,6 @@ public:
 			logFile << "vector_error_count = " << vector_error_count << "\n";
 		}
 
-		delete [] test_inputs;
-		delete [] test_outputs;
 
 		cout	<< "testing stopped\n\n";
 		logFile << "testing stopped\n\n";
