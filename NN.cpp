@@ -28,6 +28,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <random>
 
 using namespace std;
 
@@ -183,18 +184,22 @@ class NN
 	void update()
 	{
 		for ( int i = 0; i <= inputs; i++ )
+		{
 			for ( int j = 0; j < hiddens; j++ )
 			{
 				(*ihWeightp)( i, j ) += (*ihDelp)( i, j );
  				(*ihDelp)( i, j ) = 0.0;
 			}
+		}
 
 		for ( int i = 0; i <= hiddens; i++ )
+		{
 			for ( int j = 0; j < outputs; j++ )
 			{
 				(*hoWeightp)( i, j ) += (*hoDelp)( i, j );
 				(*hoDelp)( i, j ) = 0.0;
 			}
+		}
 	}
 
 	//-----------------------------------------------------
@@ -207,6 +212,7 @@ class NN
 		map< char, float* >::iterator symbolmapit = symbolmap_.begin();
 
 		if ( symbols == nodes_per_symbol_ )
+		{
 			for ( int i = 0; i < symbols; i++, symbolmapit++ )
 			{
 				symbolmapit->second = new float[ nodes_per_symbol_ ];
@@ -215,7 +221,9 @@ class NN
 					(symbolmapit->second)[ j ] = (float)( i == j ? 1.0 : 0.0 );					// one-hot encoding
 				//  (symbolmapit->second)[ j ] = (float)( ( ( ( 1 << i ) >> j ) & 1 ) * 1.0 );	// one-hot encoding - same as above
 			}
+		}
 		else
+		{
 			for ( int i = 0; i < symbols; i++, symbolmapit++ )
 			{
 				symbolmapit->second = new float[ nodes_per_symbol_ ];
@@ -223,6 +231,7 @@ class NN
 				for ( int j = 0; j < nodes_per_symbol_; j++ )
 					(symbolmapit->second)[ j ] = (float)( ( ( ( i ) >> j ) & 1 ) * 1.0 );	// binary encoding
 			}
+		}
 	}
 
 	//-----------------------------------------------------
@@ -319,8 +328,11 @@ class NN
 		logsymbol2float( osymbmap, output_nodes_per_output_symbol );
 		logFile << "\n";
 
-		random_shuffle( posLines->begin(), posLines->end(), arandomp );
-		random_shuffle( negLines->begin(), negLines->end(), arandomp );
+		std::random_device rd;
+		std::mt19937 arandomp(rd());
+
+		std::shuffle(posLines->begin(), posLines->end(), arandomp);
+		std::shuffle(negLines->begin(), negLines->end(), arandomp);
 
 		vector< string >::iterator linesit;
 		string::iterator symbit;
@@ -413,19 +425,23 @@ class NN
 		double value;
 
 		for ( int i = 0; i < inputs+1; i++ )
+		{
 			for ( int j = 0; j < hiddens; j++ )
 			{
 				value = (*ihWeightp)( i, j );
 				cout << "input to hidden weight: (*ihWeightp)( " << i << ", " << j << " ) = " << value << '\n';
 			}
+		}
 		cout << '\n';
 
 		for ( int i = 0; i < hiddens+1; i++ )
+		{
 			for ( int j = 0; j < outputs; j++ )
 			{
 				value = (*hoWeightp)( i, j );
 				cout << "hidden to output weight: (*hoWeightp)( " << i << ", " << j << " ) = " << value << '\n';
 			}
+		}
 		cout << '\n';
 	}
 
@@ -467,19 +483,27 @@ public:
 		min_epoch_size = min_epoch_size_;
 		max_epoch_size = max_epoch_size_;
 
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_real_distribution<> dis(-0.5, 0.5);
+
  		srand( seed );
 		for ( int i = 0; i <= inputs; i++ )
+		{
 			for ( int j = 0; j < hiddens; j++ )
 			{
-				(*ihWeightp)( i, j ) = (double)arandom(RAND_MAX) / (RAND_MAX + 1) - 0.5;
+				(*ihWeightp)( i, j ) = dis(gen);
 				(*ihDelp)( i, j )	= 0.0;
 			}
+		}
 		for ( int i = 0; i <= hiddens; i++ )
+		{
 			for ( int j = 0; j < outputs; j++ )
 			{
-				(*hoWeightp)( i, j ) = (double)arandom(RAND_MAX) / (RAND_MAX + 1) - 0.5;
+				(*hoWeightp)( i, j ) = dis(gen);
 				(*hoDelp)( i, j )	= 0.0;
 			}
+		}
 	}
 
 	//-----------------------------------------------------
@@ -560,29 +584,32 @@ public:
  		int  vector_error_count = 0;
 		bool compare_outputs = false;
 
-		while ( !testFile.eof() && tests < MAX_TESTS )
+		while (std::getline(testFile, line) && tests < MAX_TESTS)
 		{
-			getline( testFile, line );
-
 			int line_length = line.length();
-			if ( line_length == 0 ) continue;
-			if ( line_length != line_length1 && line_length != line_length2 )
+			if (line_length == 0) continue;
+			if (line_length != line_length1 && line_length != line_length2)
 			{
-				cout	<< "line length error for test vector = " << line << " (test = " << tests << ")\n";
+				std::cout << "line length error for test vector = " << line << " (test = " << tests << ")\n";
 				logFile << "line length error for test vector = " << line << " (test = " << tests << ")\n";
+				delete[] test_inputs;
+				delete[] test_outputs;
 				return;
 			}
 
-			assert( line.length() == (unsigned)line_length );
-			if ( line_length == line_length2 )
+			assert(line.length() == static_cast<unsigned>(line_length));
+			if (line_length == line_length2)
 				compare_outputs = true;
 
 			string::iterator symbit = line.begin();
 			for ( int i = 0; i < input_symbols; i++, symbit++ )
+			{
 				if ( !isymbmap.count( line[ i ] ) )
 				{
 					cout	<< "input symbol error for test vector = " << line << " (test = " << tests << ")\n";
 					logFile << "input symbol error for test vector = " << line << " (test = " << tests << ")\n";
+					delete[] test_inputs;
+					delete[] test_outputs;
 					return;
 				}
 				else
@@ -592,10 +619,13 @@ public:
 				}
 			if ( compare_outputs )
 				for ( int i = 0; i < output_symbols; i++, symbit++ )
+				{
 					if ( !osymbmap.count( line[ input_symbols + i ] ) )
 					{
 						cout	<< "output symbol error for test vector = " << line << " (test = " << tests << ")\n";
 						logFile << "output symbol error for test vector = " << line << " (test = " << tests << ")\n";
+						delete[] test_inputs;
+						delete[] test_outputs;
 						return;
 					}
 					else
@@ -603,6 +633,8 @@ public:
 						for ( int j = 0; j < output_nodes_per_output_symbol; j++ )
 							test_outputs[ i * output_nodes_per_output_symbol + j ] = osymbmap[ *symbit ][ j ];
 					}
+				}
+			}
 
 
 			FF( test_inputs );
@@ -862,8 +894,11 @@ int main()
 {
 	cout.setf( ios::fixed, ios::floatfield );
 	cout.precision( 5 );
-
+	std::cout << "PROGRAM STARTED\n";
 	logFile.open( LOG_FILENAME, ios::out );
+	if (!logFile.is_open()) {
+    	std::cerr << "Failed to open log file: " << LOG_FILENAME << std::endl;
+	}
 	logFile.setf( ios::fixed, ios::floatfield );
 	logFile.precision( 5 );
 
